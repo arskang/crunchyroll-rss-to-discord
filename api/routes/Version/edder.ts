@@ -1,0 +1,1 @@
+export default 'Edder: [0.0.1]';
