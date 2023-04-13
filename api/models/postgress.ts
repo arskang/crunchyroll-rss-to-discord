@@ -5,7 +5,7 @@ export class Logs {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column()
+    @Column({ unique: true })
     crunchyrollID: string
 
     @Column()
