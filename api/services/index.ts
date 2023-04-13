@@ -37,6 +37,8 @@ export async function getRSSItemsCrunchyroll() {
     .filter(({ id }) => !logsIDs.includes(id))
     .reverse();
 
+  if (itemsf.length === 0) return items;
+
   let index = 0;
   let count = 1;
   const discordMessages: Discord[] = [];
