@@ -4,7 +4,7 @@ import { parse } from 'rss-to-json';
 import { In } from "typeorm"
 
 import db from '../db';
-import { CrunchyrollRSS, Item } from '../models/crunchyroll';
+import { CrunchyrollRSS, Item, FluffyEnclosure } from '../models/crunchyroll';
 import { Discord, Embed } from '../models/discord';
 import { Logs } from '../models/postgress';
 
@@ -47,12 +47,18 @@ export async function getRSSItemsCrunchyroll() {
       count = 1;
     }
 
+    let image: string | undefined;
+    if (Array.isArray(item.enclosures)) {
+      const enclosures = item.enclosures[0] as FluffyEnclosure;
+      image = enclosures.url;
+    }
+
     const embed: Embed = {
       title: item.title,
       url: item.link,
       color: 16020769, // #f47521
       description: moment.unix(item.published/1000).format('LLLL'),
-      image: { url: item.description.replace(/(.+src=\")(.+)(\".+)/, "$2") } ,
+      ...(image ? { image: { url: image } } : {}),
     }
 
     if (count === 1) {
