@@ -1,0 +1,10 @@
+name: Link Check
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Ejecuta el flujo de trabajo cada 30 minutos
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Link
+        run: curl --head --fail --location --silent https://third-chlorinated-collard.glitch.me/crunchyroll/news || exit 1
