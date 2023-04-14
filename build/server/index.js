@@ -17,9 +17,9 @@ class Server {
         this.provider = provider;
     }
     StartCron() {
-        let minutes = process.env.MINUTES || '10';
+        let minutes = process.env.MINUTES || '30';
         if (Number.isNaN(minutes))
-            minutes = '10';
+            minutes = '30';
         cron.schedule(`*/${minutes} * * * *`, () => {
             (0, services_1.getRSSItemsCrunchyroll)()
                 .then(() => {
@@ -29,10 +29,13 @@ class Server {
                 console.log("Cron error", err);
             });
         });
+        console.log('Cronjob has been initialized!');
     }
     Start() {
         return __awaiter(this, void 0, void 0, function* () {
-            // this.StartCron();
+            if (process.env.CRONOFF !== 'true') {
+                this.StartCron();
+            }
             yield this.provider.Start();
         });
     }

@@ -57,12 +57,12 @@ function getRSSItemsCrunchyroll() {
         let lastMinutes = process.env.LAST_MINUTES || '60';
         if (Number.isNaN(lastMinutes))
             lastMinutes = '60';
-        const lastiitems = items.filter(({ published }) => (moment.unix(published / 1000)
+        const lastItems = items.filter(({ published }) => (moment.unix(published / 1000)
             .clone()
             .isBetween(moment().add(-1 * (Number(lastMinutes)), 'minutes'), moment())));
-        if (lastiitems.length === 0)
-            return items;
-        const ids = lastiitems.reduce((acc, { id }) => [...acc, id], []);
+        if (lastItems.length === 0)
+            return lastItems;
+        const ids = lastItems.reduce((acc, { id }) => [...acc, id], []);
         const logs = db_1.default.getRepository('Logs');
         const logsDB = yield logs.find({ where: { crunchyrollID: (0, typeorm_1.In)(ids) } });
         const logsIDs = (logsDB || []).map(({ crunchyrollID }) => crunchyrollID);
@@ -76,11 +76,11 @@ function getRSSItemsCrunchyroll() {
                 .printSql()
                 .execute();
         }
-        const itemsf = lastiitems
+        const itemsf = lastItems
             .filter(({ id }) => !logsIDs.includes(id))
             .reverse();
         if (itemsf.length === 0)
-            return items;
+            return itemsf;
         let index = 0;
         let count = 1;
         const discordMessages = [];
@@ -127,7 +127,7 @@ function getRSSItemsCrunchyroll() {
             .values(newLogs)
             .printSql()
             .execute();
-        return items;
+        return itemsf;
     });
 }
 exports.getRSSItemsCrunchyroll = getRSSItemsCrunchyroll;
