@@ -30,7 +30,7 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRSSItemsCrunchyroll = exports.sleep = void 0;
 const axios_1 = require("axios");
-const moment = require("moment");
+const moment = require("moment-timezone");
 const rss_to_json_1 = require("rss-to-json");
 const typeorm_1 = require("typeorm");
 const db_1 = require("../db");
@@ -58,8 +58,9 @@ function getRSSItemsCrunchyroll() {
         if (Number.isNaN(lastMinutes))
             lastMinutes = '60';
         const lastItems = items.filter(({ published }) => (moment.unix(published / 1000)
+            .tz("America/Mexico_City")
             .clone()
-            .isBetween(moment().add(-1 * (Number(lastMinutes)), 'minutes'), moment())));
+            .isBetween(moment().tz("America/Mexico_City").add(-1 * (Number(lastMinutes)), 'minutes'), moment().tz("America/Mexico_City"))));
         if (lastItems.length === 0)
             return lastItems;
         const ids = lastItems.reduce((acc, { id }) => [...acc, id], []);
@@ -95,7 +96,9 @@ function getRSSItemsCrunchyroll() {
                 const enclosures = item.enclosures[0];
                 image = enclosures.url;
             }
-            const embed = Object.assign({ title: item.title, url: item.link, color: 16020769, description: moment.unix(item.published / 1000).format('LLLL') }, (image ? { image: { url: image } } : {}));
+            const embed = Object.assign({ title: item.title, url: item.link, color: 16020769, description: moment.unix(item.published / 1000)
+                    .tz("America/Mexico_City")
+                    .format('LLLL') }, (image ? { image: { url: image } } : {}));
             if (count === 1) {
                 discordMessages.push({ embeds: [embed] });
             }
@@ -104,7 +107,7 @@ function getRSSItemsCrunchyroll() {
             }
             const log = new entities_1.Logs();
             log.crunchyrollID = item.id;
-            log.createdAt = moment().toDate();
+            log.createdAt = moment().tz("America/Mexico_City").toDate();
             newLogs.push(log);
             count++;
         });

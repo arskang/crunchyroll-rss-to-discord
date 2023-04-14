@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const cron = require("node-cron");
-const moment = require("moment");
+const moment = require("moment-timezone");
 const services_1 = require("../services");
 class Server {
     constructor(provider) {
@@ -23,7 +23,7 @@ class Server {
         cron.schedule(`*/${minutes} * * * *`, () => {
             (0, services_1.getRSSItemsCrunchyroll)()
                 .then(() => {
-                console.log("Cron ejecutado", moment().calendar());
+                console.log("Cron ejecutado", moment().tz("America/Mexico_City").calendar());
             })
                 .catch((err) => {
                 console.log("Cron error", err);

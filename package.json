@@ -1,5 +1,5 @@
 {
-  "name": "crunchyroll-rss",
+  "name": "crunchyroll-rss-to-discord",
   "version": "1.0.0",
   "main": "build/index.js",
   "license": "MIT",
@@ -10,6 +10,9 @@
     "start": "node ./build/index.js",
     "start:dev": "nodemon ./api/index.ts",
     "build": "npx tsc"
+  },
+  "engines": {
+    "node": "16.x"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
@@ -27,6 +30,7 @@
     "dotenv": "^16.0.1",
     "fastify": "^4.8.1",
     "moment": "^2.29.4",
+    "moment-timezone": "^0.5.43",
     "node-cron": "^3.0.2",
     "rss-to-json": "^2.1.1",
     "sqlite3": "^5.1.6",

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 import { parse } from 'rss-to-json';
 import { In, Not } from "typeorm"
 
@@ -32,10 +32,11 @@ export async function getRSSItemsCrunchyroll() {
 
   const lastItems = items.filter(({ published }) => (
     moment.unix(published/1000)
+      .tz("America/Mexico_City")
       .clone()
       .isBetween(
-        moment().add(-1*(Number(lastMinutes)), 'minutes'),
-        moment(),
+        moment().tz("America/Mexico_City").add(-1*(Number(lastMinutes)), 'minutes'),
+        moment().tz("America/Mexico_City"),
       )
   ));
 
@@ -86,7 +87,9 @@ export async function getRSSItemsCrunchyroll() {
       title: item.title,
       url: item.link,
       color: 16020769, // #f47521
-      description: moment.unix(item.published/1000).format('LLLL'),
+      description: moment.unix(item.published/1000)
+        .tz("America/Mexico_City")
+        .format('LLLL'),
       ...(image ? { image: { url: image } } : {}),
     }
 
@@ -98,7 +101,7 @@ export async function getRSSItemsCrunchyroll() {
 
     const log = new Logs();
     log.crunchyrollID = item.id;
-    log.createdAt = moment().toDate();
+    log.createdAt = moment().tz("America/Mexico_City").toDate();
     newLogs.push(log);
 
     count++;

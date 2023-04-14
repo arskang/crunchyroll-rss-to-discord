@@ -1,5 +1,5 @@
 import * as cron from 'node-cron';
-import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 import { getRSSItemsCrunchyroll } from '../services';
 
 export interface ServerProvider { 
@@ -19,7 +19,7 @@ export default class Server {
     cron.schedule(`*/${minutes} * * * *`, () => {
       getRSSItemsCrunchyroll()
         .then(() => {
-          console.log("Cron ejecutado", moment().calendar())
+          console.log("Cron ejecutado", moment().tz("America/Mexico_City").calendar())
         })
         .catch((err) => {
           console.log("Cron error", err);
