@@ -1,12 +1,12 @@
 import axios from 'axios';
 import * as moment from 'moment';
 import { parse } from 'rss-to-json';
-import { In } from "typeorm"
+import { In, Not } from "typeorm"
 
 import db from '../db';
 import { CrunchyrollRSS, Item, FluffyEnclosure } from '../models/crunchyroll';
 import { Discord, Embed } from '../models/discord';
-import { Logs } from '../models/postgress';
+import { Logs } from '../models/entities';
 
 import 'moment/locale/es-mx';
 moment.locale('es-mx');
@@ -27,17 +27,44 @@ export async function getRSSItemsCrunchyroll() {
   const resp = await parse('http://feeds.feedburner.com/crunchyroll/rss/anime?lang=esLA');
   const { items } = resp as CrunchyrollRSS;
 
-  const ids = items.reduce<string[]>((acc, { id }) => [...acc, id], []);
+  let lastMinutes = process.env.LAST_MINUTES || '60';
+  if (Number.isNaN(lastMinutes)) lastMinutes = '60';
+
+  const lastItems = items.filter(({ published }) => (
+    moment.unix(published/1000)
+      .clone()
+      .isBetween(
+        moment().add(-1*(Number(lastMinutes)), 'minutes'),
+        moment(),
+      )
+  ));
+
+  if (lastItems.length === 0) return lastItems;
+
+  const ids = lastItems.reduce<string[]>((acc, { id }) => [...acc, id], []);
 
   const logs = db.getRepository<Logs>('Logs');
+
   const logsDB = await logs.find({ where: { crunchyrollID: In(ids) }});
   const logsIDs = (logsDB || []).map(({ crunchyrollID }) => crunchyrollID);
 
-  const itemsf: Item[] = items
+  const logsDelete = await logs.find({ where: { crunchyrollID: Not(In(ids)) }});
+  const logsDeleteIDs = (logsDelete || []).map(({ crunchyrollID }) => crunchyrollID);
+
+  if (logsDeleteIDs.length > 0) {
+    await db.createQueryBuilder()
+      .delete()
+      .from(Logs)
+      .where("crunchyrollID IN (:ids)", { ids: logsDeleteIDs })
+      .printSql()
+      .execute();
+  }
+
+  const itemsf: Item[] = lastItems
     .filter(({ id }) => !logsIDs.includes(id))
     .reverse();
 
-  if (itemsf.length === 0) return items;
+  if (itemsf.length === 0) return itemsf;
 
   let index = 0;
   let count = 1;
@@ -85,7 +112,8 @@ export async function getRSSItemsCrunchyroll() {
     .insert()
     .into(Logs)
     .values(newLogs)
+    .printSql()
     .execute()
 
-  return items;
+  return itemsf;
 }

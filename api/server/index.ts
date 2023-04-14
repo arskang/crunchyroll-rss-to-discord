@@ -14,8 +14,8 @@ export default class Server {
   }
 
   private StartCron() {
-    let minutes = process.env.MINUTES || '10';
-    if (Number.isNaN(minutes)) minutes = '10';
+    let minutes = process.env.MINUTES || '30';
+    if (Number.isNaN(minutes)) minutes = '30';
     cron.schedule(`*/${minutes} * * * *`, () => {
       getRSSItemsCrunchyroll()
         .then(() => {
@@ -25,10 +25,13 @@ export default class Server {
           console.log("Cron error", err);
         });
     });
+    console.log('Cronjob has been initialized!');
   }
 
   public async Start() {
-    this.StartCron();
+    if (process.env.CRONOFF !== 'true') {
+      this.StartCron();
+    }
     await this.provider.Start();
   }
 }

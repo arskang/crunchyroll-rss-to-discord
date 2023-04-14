@@ -10,6 +10,8 @@ declare var process: {
     LOGGER?: string,
     DISCORD_WEBHOOK?: string,
     MINUTES?: string,
+    LAST_MINUTES?: string,
+    CRONOFF?: string,
   }
 }
 

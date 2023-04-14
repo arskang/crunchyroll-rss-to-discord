@@ -1,9 +1,9 @@
 import { DataSource } from "typeorm"
-import { Logs } from '../models/postgress';
+import { Logs } from '../models/entities';
 
 const localDB = new DataSource({
-  type: "postgres",
-  url: process.env.LOCAL_DB,
+  type: "sqlite",
+  database: "mydb.sql",
   logger: "advanced-console",
   synchronize: true,
   entities: [Logs],
