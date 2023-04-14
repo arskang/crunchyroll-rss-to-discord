@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "build/index.js",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/arskang/crunchyroll-rss-to-discord"
+  },
   "scripts": {
     "start": "node ./build/index.js",
     "start:dev": "nodemon ./api/index.ts",
