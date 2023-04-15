@@ -1,1 +1,1 @@
-export default 'Edder: [1.0.0]';
+export default 'Edder: [1.0.1]';
