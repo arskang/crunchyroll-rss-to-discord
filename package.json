@@ -15,7 +15,6 @@
     "node": "16.x"
   },
   "devDependencies": {
-    "@types/axios": "^0.14.0",
     "@types/moment": "^2.13.0",
     "@types/node": "^18.0.0",
     "@types/node-cron": "^3.0.7",
@@ -25,8 +24,8 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
+    "@arskang/discord-webhook": "^1.0.0",
     "@fastify/cors": "^8.0.0",
-    "axios": "^1.3.5",
     "dotenv": "^16.0.1",
     "fastify": "^4.8.1",
     "moment": "^2.29.4",

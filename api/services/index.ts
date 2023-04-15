@@ -1,23 +1,14 @@
-import axios from 'axios';
 import * as moment from 'moment-timezone';
 import { parse } from 'rss-to-json';
 import { In, Not } from "typeorm"
+import { EmbedBuilder, MessageBuilder, HookBuilder } from '@arskang/discord-webhook';
 
 import db from '../db';
 import { CrunchyrollRSS, Item, FluffyEnclosure } from '../models/crunchyroll';
-import { Discord, Embed } from '../models/discord';
 import { Logs } from '../models/entities';
 
 import 'moment/locale/es-mx';
 moment.locale('es-mx');
-
-export const sleep = () => new Promise<boolean>(res => setTimeout(() => res(true), 30000));
-
-async function* sendWebhook(discordMessages: Discord[]) {
-  for(const message of discordMessages) {
-    yield axios.post(process.env.DISCORD_WEBHOOK || '', message);
-  } 
-}
 
 export async function getRSSItemsCrunchyroll() {
   if (!db.isInitialized) {
@@ -69,7 +60,7 @@ export async function getRSSItemsCrunchyroll() {
 
   let index = 0;
   let count = 1;
-  const discordMessages: Discord[] = [];
+  const discordMessages: MessageBuilder[] = [];
   const newLogs: Logs[] = []
   itemsf.forEach((item) => {
     if (count === 11) {
@@ -83,20 +74,28 @@ export async function getRSSItemsCrunchyroll() {
       image = enclosures.url;
     }
 
-    const embed: Embed = {
-      title: item.title,
-      url: item.link,
-      color: 16020769, // #f47521
-      description: moment.unix(item.published/1000)
-        .tz("America/Mexico_City")
-        .format('LLLL'),
-      ...(image ? { image: { url: image } } : {}),
+    const embed = new EmbedBuilder()
+      .setTitle(item.title)
+      .setUrl(item.link)
+      .setColor('#f47521')
+      .setDescription(
+        moment.unix(item.published/1000)
+          .tz("America/Mexico_City")
+          .format('LLLL')
+      );
+
+    if (image) embed.setImage(image);
+
+    if (process.env.LOGGER === 'true') {
+      console.log(embed.getJson());
     }
 
     if (count === 1) {
-      discordMessages.push({ embeds: [embed] });
+      const message = new MessageBuilder()
+        .addEmbed(embed.build());
+      discordMessages.push(message);
     } else {
-      discordMessages[index].embeds.push(embed);
+      discordMessages[index].addEmbed(embed.build());
     }
 
     const log = new Logs();
@@ -107,8 +106,18 @@ export async function getRSSItemsCrunchyroll() {
     count++;
   });
 
-  for await (const r of sendWebhook(discordMessages)) {
-    console.log(r.data);
+  const hook = new HookBuilder(process.env.DISCORD_WEBHOOK || '');
+  discordMessages.forEach(message => {
+    if (process.env.LOGGER === 'true') {
+      console.log(message.getJson());
+    }
+    hook.addMessage(message.build());
+  });
+
+  try {
+    await hook.send();
+  } catch(err) {
+    console.error(err);
   }
 
   await db.createQueryBuilder()
