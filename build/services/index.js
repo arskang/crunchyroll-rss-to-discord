@@ -8,46 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
-    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
-    function fulfill(value) { resume("next", value); }
-    function reject(value) { resume("throw", value); }
-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-};
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRSSItemsCrunchyroll = exports.sleep = void 0;
-const axios_1 = require("axios");
+exports.getRSSItemsCrunchyroll = void 0;
 const moment = require("moment-timezone");
 const rss_to_json_1 = require("rss-to-json");
 const typeorm_1 = require("typeorm");
+const discord_webhook_1 = require("@arskang/discord-webhook");
 const db_1 = require("../db");
 const entities_1 = require("../models/entities");
 require("moment/locale/es-mx");
 moment.locale('es-mx');
-const sleep = () => new Promise(res => setTimeout(() => res(true), 30000));
-exports.sleep = sleep;
-function sendWebhook(discordMessages) {
-    return __asyncGenerator(this, arguments, function* sendWebhook_1() {
-        for (const message of discordMessages) {
-            yield yield __await(axios_1.default.post(process.env.DISCORD_WEBHOOK || '', message));
-        }
-    });
-}
 function getRSSItemsCrunchyroll() {
-    var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
         if (!db_1.default.isInitialized) {
             throw new Error('DB has not initialized');
@@ -96,14 +67,25 @@ function getRSSItemsCrunchyroll() {
                 const enclosures = item.enclosures[0];
                 image = enclosures.url;
             }
-            const embed = Object.assign({ title: item.title, url: item.link, color: 16020769, description: moment.unix(item.published / 1000)
-                    .tz("America/Mexico_City")
-                    .format('LLLL') }, (image ? { image: { url: image } } : {}));
+            const embed = new discord_webhook_1.EmbedBuilder()
+                .setTitle(item.title)
+                .setUrl(item.link)
+                .setColor('#f47521')
+                .setDescription(moment.unix(item.published / 1000)
+                .tz("America/Mexico_City")
+                .format('LLLL'));
+            if (image)
+                embed.setImage(image);
+            if (process.env.LOGGER === 'true') {
+                console.log(embed.getJson());
+            }
             if (count === 1) {
-                discordMessages.push({ embeds: [embed] });
+                const message = new discord_webhook_1.MessageBuilder()
+                    .addEmbed(embed.build());
+                discordMessages.push(message);
             }
             else {
-                discordMessages[index].embeds.push(embed);
+                discordMessages[index].addEmbed(embed.build());
             }
             const log = new entities_1.Logs();
             log.crunchyrollID = item.id;
@@ -111,18 +93,18 @@ function getRSSItemsCrunchyroll() {
             newLogs.push(log);
             count++;
         });
+        const hook = new discord_webhook_1.HookBuilder(process.env.DISCORD_WEBHOOK || '');
+        discordMessages.forEach(message => {
+            if (process.env.LOGGER === 'true') {
+                console.log(message.getJson());
+            }
+            hook.addMessage(message.build());
+        });
         try {
-            for (var _b = __asyncValues(sendWebhook(discordMessages)), _c; _c = yield _b.next(), !_c.done;) {
-                const r = _c.value;
-                console.log(r.data);
-            }
+            yield hook.send();
         }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
-            }
-            finally { if (e_1) throw e_1.error; }
+        catch (err) {
+            console.error(err);
         }
         yield db_1.default.createQueryBuilder()
             .insert()
